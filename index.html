@@ -1,115 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Speech To Text Notes</title>
-
-<style>
-*{
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech To Text Todo</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        *{
     margin:0;
     padding:0;
     box-sizing:border-box;
-    font-family:Arial,Helvetica,sans-serif;
+    font-family:Arial, Helvetica, sans-serif;
 }
 
 body{
-    background:linear-gradient(135deg,#2563eb,#7c3aed);
-    min-height:100vh;
+    background:#f4f7fb;
     display:flex;
     justify-content:center;
-    align-items:center;
-    padding:20px;
+    padding:50px;
 }
 
 .container{
-    width:100%;
-    max-width:700px;
-    background:#fff;
-    border-radius:20px;
-    padding:25px;
-    box-shadow:0 20px 40px rgba(0,0,0,.2);
+    width:700px;
+    background:white;
+    padding:30px;
+    border-radius:15px;
+    box-shadow:0 10px 30px rgba(0,0,0,.15);
 }
 
-h1{
+h1,h2{
     text-align:center;
     margin-bottom:20px;
 }
 
-.status{
-    text-align:center;
-    margin-bottom:15px;
-    font-weight:bold;
-    color:#666;
-}
-
 textarea{
     width:100%;
-    min-height:180px;
-    border:2px solid #ddd;
-    border-radius:12px;
+    height:180px;
     padding:15px;
+    font-size:18px;
+    border-radius:10px;
+    border:2px solid #ddd;
     resize:none;
     outline:none;
-    font-size:18px;
 }
 
 .buttons{
     display:flex;
-    gap:12px;
+    justify-content:center;
+    gap:15px;
     margin-top:20px;
-    flex-wrap:wrap;
 }
 
 button{
-    flex:1;
-    min-width:120px;
-    padding:15px;
+    padding:12px 25px;
     border:none;
-    border-radius:10px;
-    color:#fff;
-    font-size:16px;
+    border-radius:8px;
+    color:white;
     cursor:pointer;
-    transition:.3s;
-}
-
-button:hover{
-    transform:scale(1.03);
+    font-size:16px;
 }
 
 #start{
-    background:#16a34a;
+    background:#28a745;
 }
 
 #stop{
-    background:#ef4444;
+    background:#dc3545;
 }
 
 #done{
-    background:#2563eb;
+    background:#007bff;
 }
 
-h2{
-    margin:25px 0 15px;
+button:hover{
+    opacity:.9;
 }
 
-ul{
+#todoList{
     list-style:none;
+    margin-top:25px;
 }
 
-li{
-    background:#f5f5f5;
+#todoList li{
+    background:#eef4ff;
     padding:15px;
-    border-radius:10px;
+    border-radius:8px;
     margin-bottom:12px;
     display:flex;
     justify-content:space-between;
     align-items:center;
-    gap:10px;
-}
-
-li span{
-    flex:1;
     word-break:break-word;
 }
 
@@ -117,197 +96,113 @@ li span{
     background:red;
     color:white;
     border:none;
-    padding:8px 14px;
-    border-radius:8px;
+    padding:7px 12px;
+    border-radius:5px;
+    cursor:pointer;
 }
-
-@media(max-width:600px){
-
-.buttons{
-    flex-direction:column;
-}
-
-button{
-    width:100%;
-}
-
-li{
-    flex-direction:column;
-    align-items:flex-start;
-}
-
-.delete{
-    width:100%;
-}
-
-}
-</style>
-
+    </style>
 </head>
-
 <body>
 
 <div class="container">
 
-<h1>🎤 Speech To Text Notes</h1>
+    <h1>🎤 Speech To Text Todo</h1>
 
-<div class="status" id="status">
-Ready
-</div>
+    <div class="speech-box">
 
-<textarea id="result" placeholder="Speak here..."></textarea>
+        <textarea id="result" placeholder="Speak something..." readonly></textarea>
 
-<div class="buttons">
-<button id="start">🎙 Start</button>
-<button id="stop">⏹ Stop</button>
-<button id="done">✅ Done</button>
-</div>
+        <div class="buttons">
+            <button id="start">🎙 Start</button>
+            <button id="stop">⏹ Stop</button>
+            <button id="done">✅ Done</button>
+        </div>
 
-<h2>📝 My Notes</h2>
+    </div>
 
-<ul id="notes"></ul>
+    <h2>Your Notes</h2>
+
+    <ul id="todoList"></ul>
 
 </div>
 
 <script>
+    const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
 
-const SpeechRecognition =
-window.SpeechRecognition || window.webkitSpeechRecognition;
-
-if(!SpeechRecognition){
-    alert("Speech Recognition is not supported in this browser. Please use Google Chrome.");
+if (!SpeechRecognition) {
+    alert("Speech Recognition is not supported in this browser.");
 }
 
 const recognition = new SpeechRecognition();
 
-recognition.lang="en-US";
-recognition.continuous=true;
-recognition.interimResults=true;
+recognition.continuous = true;
+recognition.interimResults = true;
+recognition.lang = "en-US";
 
-const textarea=document.getElementById("result");
-const status=document.getElementById("status");
-const notes=document.getElementById("notes");
+const result = document.getElementById("result");
+const startBtn = document.getElementById("start");
+const stopBtn = document.getElementById("stop");
+const doneBtn = document.getElementById("done");
+const todoList = document.getElementById("todoList");
 
-let finalTranscript="";
+let finalTranscript = "";
 
-loadNotes();
-
-document.getElementById("start").onclick=()=>{
-
-navigator.mediaDevices.getUserMedia({audio:true})
-.then(()=>{
-
-recognition.start();
-
-})
-.catch(()=>{
-
-alert("Please allow microphone permission.");
-
-});
-
+startBtn.onclick = () => {
+    recognition.start();
 };
 
-document.getElementById("stop").onclick=()=>{
-
-recognition.stop();
-
+stopBtn.onclick = () => {
+    recognition.stop();
 };
 
-recognition.onstart=()=>{
+recognition.onresult = (event) => {
 
-status.innerHTML="🎤 Listening...";
+    let interimTranscript = "";
 
+    for(let i = event.resultIndex; i < event.results.length; i++){
+
+        let transcript = event.results[i][0].transcript;
+
+        if(event.results[i].isFinal){
+            finalTranscript += transcript + " ";
+        }else{
+            interimTranscript += transcript;
+        }
+    }
+
+    result.value = finalTranscript + interimTranscript;
 };
 
-recognition.onend=()=>{
+doneBtn.onclick = () => {
 
-status.innerHTML="Stopped";
+    if(result.value.trim()=="") return;
 
+    const li = document.createElement("li");
+
+    const text = document.createElement("span");
+    text.innerText = result.value;
+
+    const del = document.createElement("button");
+    del.innerText = "Delete";
+    del.className = "delete";
+
+    del.onclick = ()=>{
+        li.remove();
+    };
+
+    li.appendChild(text);
+    li.appendChild(del);
+
+    todoList.appendChild(li);
+
+    result.value="";
+    finalTranscript="";
 };
 
-recognition.onerror=(e)=>{
-
-status.innerHTML=e.error;
-
+recognition.onerror = (e)=>{
+    console.log(e.error);
 };
-
-recognition.onresult=(event)=>{
-
-let interim="";
-
-for(let i=event.resultIndex;i<event.results.length;i++){
-
-let transcript=event.results[i][0].transcript;
-
-if(event.results[i].isFinal){
-
-finalTranscript+=transcript+" ";
-
-}else{
-
-interim+=transcript;
-
-}
-
-}
-
-textarea.value=finalTranscript+interim;
-
-};
-
-document.getElementById("done").onclick=()=>{
-
-let text=textarea.value.trim();
-
-if(text==="") return;
-
-let arr=JSON.parse(localStorage.getItem("notes")) || [];
-
-arr.unshift(text);
-
-localStorage.setItem("notes",JSON.stringify(arr));
-
-textarea.value="";
-finalTranscript="";
-
-loadNotes();
-
-};
-
-function loadNotes(){
-
-notes.innerHTML="";
-
-let arr=JSON.parse(localStorage.getItem("notes")) || [];
-
-arr.forEach((item,index)=>{
-
-let li=document.createElement("li");
-
-li.innerHTML=`
-<span>${item}</span>
-<button class="delete" onclick="deleteNote(${index})">Delete</button>
-`;
-
-notes.appendChild(li);
-
-});
-
-}
-
-function deleteNote(index){
-
-let arr=JSON.parse(localStorage.getItem("notes")) || [];
-
-arr.splice(index,1);
-
-localStorage.setItem("notes",JSON.stringify(arr));
-
-loadNotes();
-
-}
-
 </script>
 
 </body>
