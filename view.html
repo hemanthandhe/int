@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<link rel="stylesheet" href="style.css">
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<script src="firebase.js"></script>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Live View</h1>
+
+<div id="liveText"></div>
+
+</div>
+
+<script>
+
+db.ref("speech").on("value",(snapshot)=>{
+
+const data=snapshot.val();
+
+if(data){
+
+document.getElementById("liveText").innerHTML=data.text;
+
+}
+
+});
+
+</script>
+
+</body>
+
+</html>

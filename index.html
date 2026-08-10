@@ -1,209 +1,90 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Speech To Text Todo</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-        *{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Arial, Helvetica, sans-serif;
-}
 
-body{
-    background:#f4f7fb;
-    display:flex;
-    justify-content:center;
-    padding:50px;
-}
+<link rel="stylesheet" href="style.css">
 
-.container{
-    width:700px;
-    background:white;
-    padding:30px;
-    border-radius:15px;
-    box-shadow:0 10px 30px rgba(0,0,0,.15);
-}
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 
-h1,h2{
-    text-align:center;
-    margin-bottom:20px;
-}
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-textarea{
-    width:100%;
-    height:180px;
-    padding:15px;
-    font-size:18px;
-    border-radius:10px;
-    border:2px solid #ddd;
-    resize:none;
-    outline:none;
-}
+<script src="firebase.js"></script>
 
-.buttons{
-    display:flex;
-    justify-content:center;
-    gap:15px;
-    margin-top:20px;
-}
-
-button{
-    padding:12px 25px;
-    border:none;
-    border-radius:8px;
-    color:white;
-    cursor:pointer;
-    font-size:16px;
-}
-
-#start{
-    background:#28a745;
-}
-
-#stop{
-    background:#dc3545;
-}
-
-#done{
-    background:#007bff;
-}
-
-button:hover{
-    opacity:.9;
-}
-
-#todoList{
-    list-style:none;
-    margin-top:25px;
-}
-
-#todoList li{
-    background:#eef4ff;
-    padding:15px;
-    border-radius:8px;
-    margin-bottom:12px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    word-break:break-word;
-}
-
-.delete{
-    background:red;
-    color:white;
-    border:none;
-    padding:7px 12px;
-    border-radius:5px;
-    cursor:pointer;
-}
-    </style>
 </head>
+
 <body>
 
 <div class="container">
 
-    <h1>🎤 Speech To Text Todo</h1>
+<h1>Speech Input</h1>
 
-    <div class="speech-box">
+<textarea id="result"></textarea>
 
-        <textarea id="result" placeholder="Speak something..." readonly></textarea>
+<br>
 
-        <div class="buttons">
-            <button id="start">🎙 Start</button>
-            <button id="stop">⏹ Stop</button>
-            <button id="done">✅ Done</button>
-        </div>
+<button onclick="start()">Start</button>
 
-    </div>
-
-    <h2>Your Notes</h2>
-
-    <ul id="todoList"></ul>
+<button onclick="stop()">Stop</button>
 
 </div>
 
 <script>
-    const SpeechRecognition =
-    window.SpeechRecognition || window.webkitSpeechRecognition;
 
-if (!SpeechRecognition) {
-    alert("Speech Recognition is not supported in this browser.");
+const SpeechRecognition =
+window.SpeechRecognition ||
+window.webkitSpeechRecognition;
+
+const recognition=new SpeechRecognition();
+
+recognition.continuous=true;
+
+recognition.interimResults=true;
+
+let finalText="";
+
+function start(){
+
+recognition.start();
+
 }
 
-const recognition = new SpeechRecognition();
+function stop(){
 
-recognition.continuous = true;
-recognition.interimResults = true;
-recognition.lang = "en-US";
+recognition.stop();
 
-const result = document.getElementById("result");
-const startBtn = document.getElementById("start");
-const stopBtn = document.getElementById("stop");
-const doneBtn = document.getElementById("done");
-const todoList = document.getElementById("todoList");
+}
 
-let finalTranscript = "";
+recognition.onresult=function(e){
 
-startBtn.onclick = () => {
-    recognition.start();
+let interim="";
+
+for(let i=e.resultIndex;i<e.results.length;i++){
+
+const t=e.results[i][0].transcript;
+
+if(e.results[i].isFinal){
+
+finalText+=t+" ";
+
+}else{
+
+interim+=t;
+
+}
+
+}
+
+document.getElementById("result").value=finalText+interim;
+
+db.ref("speech").set({
+text:finalText+interim,
+time:Date.now()
+});
+
 };
 
-stopBtn.onclick = () => {
-    recognition.stop();
-};
-
-recognition.onresult = (event) => {
-
-    let interimTranscript = "";
-
-    for(let i = event.resultIndex; i < event.results.length; i++){
-
-        let transcript = event.results[i][0].transcript;
-
-        if(event.results[i].isFinal){
-            finalTranscript += transcript + " ";
-        }else{
-            interimTranscript += transcript;
-        }
-    }
-
-    result.value = finalTranscript + interimTranscript;
-};
-
-doneBtn.onclick = () => {
-
-    if(result.value.trim()=="") return;
-
-    const li = document.createElement("li");
-
-    const text = document.createElement("span");
-    text.innerText = result.value;
-
-    const del = document.createElement("button");
-    del.innerText = "Delete";
-    del.className = "delete";
-
-    del.onclick = ()=>{
-        li.remove();
-    };
-
-    li.appendChild(text);
-    li.appendChild(del);
-
-    todoList.appendChild(li);
-
-    result.value="";
-    finalTranscript="";
-};
-
-recognition.onerror = (e)=>{
-    console.log(e.error);
-};
 </script>
 
 </body>
+
 </html>
