@@ -1,34 +1,59 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 
-<link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Speech Input</title>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-  <script type="module">
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-
-import {
-    getDatabase,
-    ref,
-    set,
-    onValue
-} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
-
-const firebaseConfig = {
-    ...
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
-</script>
-
 <script src="firebase.js"></script>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f2f2f2;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+margin:0;
+}
+
+.container{
+width:700px;
+background:white;
+padding:30px;
+border-radius:10px;
+box-shadow:0 0 15px rgba(0,0,0,.2);
+}
+
+textarea{
+width:100%;
+height:220px;
+font-size:22px;
+padding:15px;
+}
+
+button{
+padding:12px 30px;
+font-size:18px;
+margin:10px;
+cursor:pointer;
+}
+
+.status{
+margin-top:15px;
+font-size:18px;
+font-weight:bold;
+color:green;
+}
+
+</style>
 
 </head>
 
@@ -36,15 +61,17 @@ const db = getDatabase(app);
 
 <div class="container">
 
-<h1>Speech Input</h1>
+<h1>🎤 Speech Input</h1>
 
-<textarea id="result"></textarea>
+<textarea id="result" readonly></textarea>
 
 <br>
 
 <button onclick="start()">Start</button>
 
 <button onclick="stop()">Stop</button>
+
+<div class="status" id="status">Stopped</div>
 
 </div>
 
@@ -54,11 +81,11 @@ const SpeechRecognition =
 window.SpeechRecognition ||
 window.webkitSpeechRecognition;
 
-const recognition=new SpeechRecognition();
+const recognition = new SpeechRecognition();
 
-recognition.continuous=true;
-
-recognition.interimResults=true;
+recognition.continuous = true;
+recognition.interimResults = true;
+recognition.lang = "en-US";
 
 let finalText="";
 
@@ -66,45 +93,59 @@ function start(){
 
 recognition.start();
 
+document.getElementById("status").innerHTML="🎤 Listening...";
+
 }
 
 function stop(){
 
 recognition.stop();
 
+document.getElementById("status").innerHTML="Stopped";
+
 }
 
-recognition.onresult=function(e){
+recognition.onresult=function(event){
 
 let interim="";
 
-for(let i=e.resultIndex;i<e.results.length;i++){
+for(let i=event.resultIndex;i<event.results.length;i++){
 
-const t=e.results[i][0].transcript;
+let transcript=event.results[i][0].transcript;
 
-if(e.results[i].isFinal){
+if(event.results[i].isFinal){
 
-finalText+=t+" ";
+finalText+=transcript+" ";
 
 }else{
 
-interim+=t;
+interim+=transcript;
 
 }
 
 }
 
-document.getElementById("result").value=finalText+interim;
+let live=finalText+interim;
+
+document.getElementById("result").value=live;
 
 db.ref("speech").set({
-text:finalText+interim,
+
+text:live,
+
 time:Date.now()
+
 });
+
+};
+
+recognition.onerror=function(e){
+
+console.log(e);
 
 };
 
 </script>
 
 </body>
-
 </html>
