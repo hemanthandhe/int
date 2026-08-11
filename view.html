@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
+
 <head>
 
 <meta charset="UTF-8">
@@ -9,7 +10,6 @@
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
 <script src="firebase.js"></script>
 
 <style>
@@ -17,22 +17,38 @@
 body{
     margin:0;
     background:#111;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    height:100vh;
     font-family:Arial;
+}
+
+.topbar{
+    padding:20px;
+    text-align:center;
+}
+
+button{
+    padding:15px 35px;
+    font-size:20px;
+    background:#ff3b30;
+    color:white;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#d60000;
 }
 
 #live{
     width:90%;
-    min-height:300px;
+    margin:20px auto;
+    min-height:350px;
     background:white;
-    color:#000;
+    color:black;
     padding:40px;
     border-radius:15px;
-    font-size:40px;
-    line-height:60px;
+    font-size:42px;
+    line-height:65px;
     white-space:pre-wrap;
 }
 
@@ -42,26 +58,46 @@ body{
 
 <body>
 
-<div id="live">Waiting for speech...</div>
+<div class="topbar">
+    <button onclick="clearText()">🗑 Clear</button>
+</div>
+
+<div id="live">
+Waiting for speech...
+</div>
 
 <script>
 
-console.log("Firebase Loaded");
+firebase.database().ref("speech").on("value",function(snapshot){
 
-firebase.database().ref("speech").on("value", function(snapshot){
+    let data=snapshot.val();
 
-    console.log(snapshot.val());
+    if(data && data.text){
 
-    if(snapshot.exists()){
+        document.getElementById("live").innerHTML=data.text;
 
-        document.getElementById("live").innerHTML =
-        snapshot.val().text;
+    }else{
+
+        document.getElementById("live").innerHTML="";
 
     }
 
 });
 
+function clearText(){
+
+    firebase.database().ref("speech").set({
+
+        text:"",
+        time:Date.now(),
+        clear:true
+
+    });
+
+}
+
 </script>
 
 </body>
+
 </html>
