@@ -145,6 +145,15 @@ console.log(e);
 
 };
 
+  firebase.database().ref("speech").set({
+    text: live,
+    time: Date.now()
+}).then(() => {
+    console.log("Saved");
+}).catch((error) => {
+    console.error(error);
+});
+
 </script>
 
 </body>
