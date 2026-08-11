@@ -155,196 +155,278 @@ Stopped
 </div>
 
 <script>
+// ----------------------------
+// Firebase References
+// ----------------------------
+const textarea = document.getElementById("result");
+const status = document.getElementById("status");
+const todoList = document.getElementById("todoList");
 
+// ----------------------------
+// Check Speech Recognition
+// ----------------------------
 const SpeechRecognition =
-window.SpeechRecognition ||
-window.webkitSpeechRecognition;
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
 
-if(!SpeechRecognition){
+if (!SpeechRecognition) {
+    alert("Your browser does not support Speech Recognition.\n\nUse Google Chrome on Android/Desktop.");
+}
 
-alert("Speech Recognition not supported");
+// ----------------------------
+// Create Recognition
+// ----------------------------
+const recognition = SpeechRecognition ? new SpeechRecognition() : null;
+
+if (recognition) {
+
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
 
 }
 
-const recognition = new SpeechRecognition();
+let finalText = "";
 
-recognition.continuous=true;
-recognition.interimResults=true;
-recognition.lang="en-US";
+// ----------------------------
+// Live typing -> Firebase
+// ----------------------------
+textarea.addEventListener("input", function () {
 
-let finalText="";
+    db.ref("speech").set({
 
-const textarea=document.getElementById("result");
+        text: textarea.value,
+        clear: false,
+        time: Date.now()
 
-textarea.addEventListener("input",()=>{
-
-db.ref("speech").set({
-
-text:textarea.value,
-clear:false,
-time:Date.now()
+    });
 
 });
 
-});
+// ----------------------------
+// START
+// ----------------------------
+async function start() {
 
-async function start(){
+    if (!recognition) return;
 
-try{
+    try {
 
-await navigator.mediaDevices.getUserMedia({
+        await navigator.mediaDevices.getUserMedia({
+            audio: true
+        });
 
-audio:true
+        recognition.start();
 
-});
+    } catch (err) {
 
-recognition.start();
+        alert("Please allow microphone permission.");
 
-status.innerHTML="🎤 Listening...";
-status.style.color="green";
+        console.log(err);
 
-}catch(e){
-
-alert("Please allow microphone.");
-
-}
-
-}
-
-function stop(){
-
-recognition.stop();
-
-status.innerHTML="Stopped";
-status.style.color="red";
+    }
 
 }
 
-recognition.onresult=function(event){
+// ----------------------------
+// STOP
+// ----------------------------
+function stop() {
 
-let interim="";
+    if (recognition) {
 
-for(let i=event.resultIndex;i<event.results.length;i++){
+        recognition.stop();
 
-let t=event.results[i][0].transcript;
-
-if(event.results[i].isFinal){
-
-finalText+=t+" ";
-
-}else{
-
-interim+=t;
+    }
 
 }
 
-}
+// ----------------------------
+// Recognition Started
+// ----------------------------
+if (recognition) {
 
-let live=finalText+interim;
+recognition.onstart = function () {
 
-textarea.value=live;
-
-db.ref("speech").set({
-
-text:live,
-clear:false,
-time:Date.now()
-
-});
+    status.innerHTML = "🎤 Listening...";
+    status.style.color = "green";
 
 };
 
-function clearCurrent(){
-
-finalText="";
-
-textarea.value="";
-
-db.ref("speech").set({
-
-text:"",
-clear:true,
-time:Date.now()
-
-});
-
 }
 
-function saveTodo(){
+// ----------------------------
+// Recognition Ended
+// ----------------------------
+if (recognition) {
 
-let txt=textarea.value.trim();
+recognition.onend = function () {
 
-if(txt=="") return;
-
-const id=Date.now();
-
-db.ref("history/"+id).set({
-
-text:txt,
-time:id
-
-});
-
-clearCurrent();
-
-}
-
-db.ref("history").on("value",(snapshot)=>{
-
-const list=document.getElementById("todoList");
-
-list.innerHTML="";
-
-snapshot.forEach((child)=>{
-
-const data=child.val();
-
-const key=child.key;
-
-const li=document.createElement("li");
-
-const span=document.createElement("div");
-
-span.className="text";
-
-span.innerHTML=data.text;
-
-const del=document.createElement("button");
-
-del.className="delete";
-
-del.innerHTML="Delete";
-
-del.onclick=function(){
-
-db.ref("history/"+key).remove();
+    status.innerHTML = "Stopped";
+    status.style.color = "red";
 
 };
 
-li.appendChild(span);
+}
 
-li.appendChild(del);
+// ----------------------------
+// Recognition Error
+// ----------------------------
+if (recognition) {
 
-list.prepend(li);
+recognition.onerror = function (e) {
 
-});
+    console.log(e);
 
-});
+    alert("Speech Error : " + e.error);
 
-db.ref("speech").on("value",(snapshot)=>{
-
-const data=snapshot.val();
-
-if(data && data.clear){
-
-finalText="";
-
-textarea.value="";
+};
 
 }
 
+// ----------------------------
+// Speech Result
+// ----------------------------
+if (recognition) {
+
+recognition.onresult = function (event) {
+
+    let interim = "";
+
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+
+        let transcript = event.results[i][0].transcript;
+
+        if (event.results[i].isFinal) {
+
+            finalText += transcript + " ";
+
+        } else {
+
+            interim += transcript;
+
+        }
+
+    }
+
+    let liveText = finalText + interim;
+
+    textarea.value = liveText;
+
+    db.ref("speech").set({
+
+        text: liveText,
+        clear: false,
+        time: Date.now()
+
+    });
+
+};
+
+}
+
+// ----------------------------
+// Clear Current
+// ----------------------------
+function clearCurrent() {
+
+    finalText = "";
+
+    textarea.value = "";
+
+    db.ref("speech").set({
+
+        text: "",
+        clear: true,
+        time: Date.now()
+
+    });
+
+}
+
+// ----------------------------
+// Save Todo
+// ----------------------------
+function saveTodo() {
+
+    let text = textarea.value.trim();
+
+    if (text === "") return;
+
+    const id = Date.now();
+
+    db.ref("history/" + id).set({
+
+        text: text,
+        time: id
+
+    });
+
+    clearCurrent();
+
+}
+
+// ----------------------------
+// Load History
+// ----------------------------
+db.ref("history").on("value", function (snapshot) {
+
+    todoList.innerHTML = "";
+
+    snapshot.forEach(function (child) {
+
+        let data = child.val();
+
+        let key = child.key;
+
+        let li = document.createElement("li");
+
+        let span = document.createElement("div");
+
+        span.className = "text";
+
+        span.innerHTML = data.text;
+
+        let del = document.createElement("button");
+
+        del.innerHTML = "Delete";
+
+        del.className = "delete";
+
+        del.onclick = function () {
+
+            db.ref("history/" + key).remove();
+
+        };
+
+        li.appendChild(span);
+
+        li.appendChild(del);
+
+        todoList.prepend(li);
+
+    });
+
 });
 
+// ----------------------------
+// Live Clear
+// ----------------------------
+db.ref("speech").on("value", function (snapshot) {
+
+    const data = snapshot.val();
+
+    if (!data) return;
+
+    if (data.clear) {
+
+        finalText = "";
+
+        textarea.value = "";
+
+    }
+
+});
 </script>
 
 </body>
