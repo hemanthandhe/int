@@ -76,10 +76,12 @@ color:green;
 </div>
 
 <script>
-
 const SpeechRecognition =
-window.SpeechRecognition ||
-window.webkitSpeechRecognition;
+window.SpeechRecognition || window.webkitSpeechRecognition;
+
+if (!SpeechRecognition) {
+    alert("Speech Recognition is not supported in this browser.");
+}
 
 const recognition = new SpeechRecognition();
 
@@ -87,73 +89,94 @@ recognition.continuous = true;
 recognition.interimResults = true;
 recognition.lang = "en-US";
 
-let finalText="";
+let finalText = "";
 
-function start(){
+const textarea = document.getElementById("result");
+const status = document.getElementById("status");
 
-recognition.start();
+async function start() {
 
-document.getElementById("status").innerHTML="🎤 Listening...";
+    try {
+
+        // Ask microphone permission
+        await navigator.mediaDevices.getUserMedia({
+            audio: true
+        });
+
+        finalText = "";
+
+        recognition.start();
+
+        status.innerHTML = "🎤 Listening...";
+        status.style.color = "green";
+
+    } catch (err) {
+
+        alert("Microphone permission denied.");
+
+    }
 
 }
 
 function stop(){
 
-recognition.stop();
+    recognition.stop();
 
-document.getElementById("status").innerHTML="Stopped";
-
-}
-
-recognition.onresult=function(event){
-
-let interim="";
-
-for(let i=event.resultIndex;i<event.results.length;i++){
-
-let transcript=event.results[i][0].transcript;
-
-if(event.results[i].isFinal){
-
-finalText+=transcript+" ";
-
-}else{
-
-interim+=transcript;
+    status.innerHTML = "Stopped";
+    status.style.color = "red";
 
 }
 
-}
+recognition.onresult = function(event){
 
-let live=finalText+interim;
+    let interim = "";
 
-document.getElementById("result").value=live;
+    for(let i = event.resultIndex; i < event.results.length; i++){
 
-db.ref("speech").set({
+        let transcript = event.results[i][0].transcript;
 
-text:live,
+        if(event.results[i].isFinal){
 
-time:Date.now()
+            finalText += transcript + " ";
 
-});
+        }else{
+
+            interim += transcript;
+
+        }
+
+    }
+
+    let live = finalText + interim;
+
+    textarea.value = live;
+
+    firebase.database().ref("speech").set({
+
+        text: live,
+        time: Date.now()
+
+    });
 
 };
 
-recognition.onerror=function(e){
+recognition.onstart = function(){
 
-console.log(e);
+    console.log("Speech Started");
 
 };
 
-  firebase.database().ref("speech").set({
-    text: live,
-    time: Date.now()
-}).then(() => {
-    console.log("Saved");
-}).catch((error) => {
-    console.error(error);
-});
+recognition.onend = function(){
 
+    console.log("Speech Stopped");
+
+};
+
+recognition.onerror = function(e){
+
+    console.log(e);
+
+};
 </script>
 
 </body>
