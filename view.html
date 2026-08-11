@@ -1,12 +1,11 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Live View</title>
+<title>Live Speech View</title>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -14,42 +13,176 @@
 
 <style>
 
-body{
-    margin:0;
-    background:#111;
-    font-family:Arial;
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,Helvetica,sans-serif;
 }
 
-.topbar{
-    padding:20px;
-    text-align:center;
+body{
+background:#111;
+padding:30px;
+color:white;
+}
+
+.container{
+max-width:1200px;
+margin:auto;
+}
+
+h1{
+font-size:45px;
+margin-bottom:25px;
+text-align:center;
+}
+
+#liveText{
+
+background:white;
+color:black;
+padding:30px;
+
+min-height:250px;
+
+border-radius:15px;
+
+font-size:45px;
+
+line-height:1.6;
+
+word-wrap:break-word;
+
+margin-bottom:30px;
+
+}
+
+.buttons{
+
+display:flex;
+
+gap:15px;
+
+justify-content:center;
+
+margin-bottom:30px;
+
 }
 
 button{
-    padding:15px 35px;
-    font-size:20px;
-    background:#ff3b30;
-    color:white;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
+
+padding:15px 35px;
+
+font-size:20px;
+
+border:none;
+
+border-radius:10px;
+
+cursor:pointer;
+
+color:white;
+
 }
 
-button:hover{
-    background:#d60000;
+.clear{
+
+background:red;
+
 }
 
-#live{
-    width:90%;
-    margin:20px auto;
-    min-height:350px;
-    background:white;
-    color:black;
-    padding:40px;
-    border-radius:15px;
-    font-size:42px;
-    line-height:65px;
-    white-space:pre-wrap;
+.refresh{
+
+background:#2196f3;
+
+}
+
+h2{
+
+margin-bottom:15px;
+
+}
+
+ul{
+
+list-style:none;
+
+}
+
+li{
+
+background:#ffffff;
+
+color:#000;
+
+padding:20px;
+
+border-radius:10px;
+
+margin-bottom:15px;
+
+font-size:24px;
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+gap:20px;
+
+}
+
+.delete{
+
+background:red;
+
+padding:10px 15px;
+
+border:none;
+
+color:white;
+
+border-radius:8px;
+
+cursor:pointer;
+
+}
+
+.text{
+
+flex:1;
+
+word-break:break-word;
+
+}
+
+@media(max-width:768px){
+
+#liveText{
+
+font-size:28px;
+
+}
+
+li{
+
+font-size:18px;
+
+}
+
+button{
+
+width:100%;
+
+}
+
+.buttons{
+
+flex-direction:column;
+
+}
+
 }
 
 </style>
@@ -58,46 +191,107 @@ button:hover{
 
 <body>
 
-<div class="topbar">
-    <button onclick="clearText()">🗑 Clear</button>
+<div class="container">
+
+<h1>📺 Live Speech Viewer</h1>
+
+<div id="liveText">
+Waiting for speech...
 </div>
 
-<div id="live">
-Waiting for speech...
+<div class="buttons">
+
+<button class="clear" onclick="clearSpeech()">
+🗑 Clear Screen
+</button>
+
+<button class="refresh" onclick="location.reload()">
+🔄 Refresh
+</button>
+
+</div>
+
+<h2>📝 Todo History</h2>
+
+<ul id="todoList"></ul>
+
 </div>
 
 <script>
 
-firebase.database().ref("speech").on("value",function(snapshot){
+// LIVE SPEECH
 
-    let data=snapshot.val();
+db.ref("speech").on("value",function(snapshot){
 
-    if(data && data.text){
+const data=snapshot.val();
 
-        document.getElementById("live").innerHTML=data.text;
+if(data){
 
-    }else{
+document.getElementById("liveText").innerHTML=data.text || "";
 
-        document.getElementById("live").innerHTML="";
-
-    }
+}
 
 });
 
-function clearText(){
+// CLEAR BUTTON
 
-    firebase.database().ref("speech").set({
+function clearSpeech(){
 
-        text:"",
-        time:Date.now(),
-        clear:true
+db.ref("speech").set({
 
-    });
+text:"",
+clear:true,
+time:Date.now()
+
+});
 
 }
+
+// HISTORY
+
+db.ref("history").on("value",function(snapshot){
+
+const list=document.getElementById("todoList");
+
+list.innerHTML="";
+
+snapshot.forEach(function(child){
+
+const data=child.val();
+
+const key=child.key;
+
+const li=document.createElement("li");
+
+const txt=document.createElement("div");
+
+txt.className="text";
+
+txt.innerHTML=data.text;
+
+const del=document.createElement("button");
+
+del.innerHTML="Delete";
+
+del.className="delete";
+
+del.onclick=function(){
+
+db.ref("history/"+key).remove();
+
+};
+
+li.appendChild(txt);
+
+li.appendChild(del);
+
+list.prepend(li);
+
+});
+
+});
 
 </script>
 
 </body>
-
 </html>
