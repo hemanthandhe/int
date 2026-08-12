@@ -15,3 +15,21 @@ firebase.initializeApp(firebaseConfig);
 
 // Realtime Database Reference
 const db = firebase.database();
+
+const firebaseConfig = {
+
+    apiKey: "...",
+    authDomain: "...",
+    databaseURL: "...",
+    projectId: "...",
+    storageBucket: "speechtodo-62326.firebasestorage.app",
+    messagingSenderId: "...",
+    appId: "..."
+
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const db = firebase.database();
+
+const storage = firebase.storage();
