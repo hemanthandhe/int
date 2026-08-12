@@ -185,6 +185,38 @@ flex-direction:column;
 
 }
 
+  .wrapper{
+
+display:grid;
+
+grid-template-columns:2fr 1fr;
+
+gap:20px;
+
+}
+
+#liveText{
+
+background:white;
+
+padding:20px;
+
+font-size:40px;
+
+min-height:300px;
+
+}
+
+.image{
+
+background:white;
+
+padding:20px;
+
+border-radius:10px;
+
+}
+
 </style>
 
 </head>
@@ -310,6 +342,16 @@ li.appendChild(del);
 list.prepend(li);
 
 });
+
+});
+
+  db.ref("image").on("value",(snapshot)=>{
+
+const data=snapshot.val();
+
+if(!data)return;
+
+document.getElementById("liveImage").src=data.url;
 
 });
 
