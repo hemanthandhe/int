@@ -1,5 +1,4 @@
 // Firebase Configuration
-
 const firebaseConfig = {
     apiKey: "AIzaSyAEfYK5nWz7NKkUlyJYmLUMrZ1gki30Wao",
     authDomain: "speechtodo-62326.firebaseapp.com",
@@ -13,5 +12,5 @@ const firebaseConfig = {
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 
-// Realtime Database Reference
-
+// Realtime Database
+const db = firebase.database();
