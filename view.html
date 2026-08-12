@@ -195,27 +195,7 @@ gap:20px;
 
 }
 
-#liveText{
 
-background:white;
-
-padding:20px;
-
-font-size:40px;
-
-min-height:300px;
-
-}
-
-.image{
-
-background:white;
-
-padding:20px;
-
-border-radius:10px;
-
-}
 
 </style>
 
@@ -258,18 +238,7 @@ Waiting for speech...
 
 </div>
 
-<div class="image">
 
-<h2>Live Image</h2>
-
-<img
-id="liveImage"
-src=""
-style="width:100%;border-radius:10px;">
-
-</div>
-
-</div>
 
 <script>
 
@@ -345,15 +314,6 @@ list.prepend(li);
 
 });
 
-  db.ref("image").on("value",(snapshot)=>{
-
-const data=snapshot.val();
-
-if(!data)return;
-
-document.getElementById("liveImage").src=data.url;
-
-});
 
 </script>
 
