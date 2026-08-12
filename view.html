@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Live Speech View</title>
+<title>Live Speech Viewer</title>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -22,8 +23,8 @@ font-family:Arial,Helvetica,sans-serif;
 
 body{
 background:#111;
+color:#fff;
 padding:30px;
-color:white;
 }
 
 .container{
@@ -32,170 +33,117 @@ margin:auto;
 }
 
 h1{
-font-size:45px;
-margin-bottom:25px;
 text-align:center;
+font-size:42px;
+margin-bottom:25px;
 }
 
 #liveText{
-
-background:white;
-color:black;
+background:#fff;
+color:#000;
 padding:30px;
-
 min-height:250px;
-
 border-radius:15px;
-
-font-size:45px;
-
+font-size:42px;
 line-height:1.6;
-
-word-wrap:break-word;
-
-margin-bottom:30px;
-
+word-break:break-word;
+margin-bottom:25px;
 }
 
 .buttons{
-
 display:flex;
-
-gap:15px;
-
 justify-content:center;
-
+gap:15px;
 margin-bottom:30px;
-
+flex-wrap:wrap;
 }
 
 button{
-
-padding:15px 35px;
-
-font-size:20px;
-
+padding:15px 30px;
+font-size:18px;
 border:none;
-
 border-radius:10px;
-
 cursor:pointer;
-
-color:white;
-
+color:#fff;
 }
 
 .clear{
-
-background:red;
-
+background:#e53935;
 }
 
 .refresh{
-
-background:#2196f3;
-
+background:#1e88e5;
 }
 
 h2{
-
-margin-bottom:15px;
-
+font-size:30px;
+margin-bottom:20px;
 }
 
 ul{
-
 list-style:none;
-
 }
 
 li{
-
-background:#ffffff;
-
+background:#fff;
 color:#000;
-
-padding:20px;
-
-border-radius:10px;
-
+padding:18px;
 margin-bottom:15px;
-
-font-size:24px;
-
+border-radius:10px;
 display:flex;
-
 justify-content:space-between;
-
 align-items:center;
-
-gap:20px;
-
-}
-
-.delete{
-
-background:red;
-
-padding:10px 15px;
-
-border:none;
-
-color:white;
-
-border-radius:8px;
-
-cursor:pointer;
-
+gap:15px;
 }
 
 .text{
-
 flex:1;
-
+font-size:22px;
 word-break:break-word;
+}
 
+.delete{
+background:#e53935;
+padding:10px 18px;
+border:none;
+border-radius:8px;
+color:#fff;
+cursor:pointer;
 }
 
 @media(max-width:768px){
 
+body{
+padding:15px;
+}
+
+h1{
+font-size:30px;
+}
+
 #liveText{
-
-font-size:28px;
-
-}
-
-li{
-
-font-size:18px;
-
-}
-
-button{
-
-width:100%;
-
+font-size:24px;
+padding:20px;
+min-height:180px;
 }
 
 .buttons{
-
 flex-direction:column;
+}
 
+button{
+width:100%;
+}
+
+h2{
+font-size:24px;
+}
+
+.text{
+font-size:18px;
 }
 
 }
-
-  .wrapper{
-
-display:grid;
-
-grid-template-columns:2fr 1fr;
-
-gap:20px;
-
-}
-
-
 
 </style>
 
@@ -228,36 +176,21 @@ Waiting for speech...
 <ul id="todoList"></ul>
 
 </div>
-  <div class="wrapper">
-
-<div class="speech">
-
-<h2>Live Speech</h2>
-
-<div id="liveText"></div>
-
-</div>
-
-
 
 <script>
 
-// LIVE SPEECH
+// Live Speech
+db.ref("speech").on("value", function(snapshot){
 
-db.ref("speech").on("value",function(snapshot){
-
-const data=snapshot.val();
+const data = snapshot.val();
 
 if(data){
-
-document.getElementById("liveText").innerHTML=data.text || "";
-
+document.getElementById("liveText").innerHTML = data.text || "Waiting for speech...";
 }
 
 });
 
-// CLEAR BUTTON
-
+// Clear Screen
 function clearSpeech(){
 
 db.ref("speech").set({
@@ -270,42 +203,35 @@ time:Date.now()
 
 }
 
-// HISTORY
+// Todo History
+db.ref("history").on("value", function(snapshot){
 
-db.ref("history").on("value",function(snapshot){
+const list = document.getElementById("todoList");
 
-const list=document.getElementById("todoList");
-
-list.innerHTML="";
+list.innerHTML = "";
 
 snapshot.forEach(function(child){
 
-const data=child.val();
+const data = child.val();
+const key = child.key;
 
-const key=child.key;
+const li = document.createElement("li");
 
-const li=document.createElement("li");
+const text = document.createElement("div");
+text.className = "text";
+text.innerHTML = data.text;
 
-const txt=document.createElement("div");
+const del = document.createElement("button");
+del.className = "delete";
+del.innerHTML = "Delete";
 
-txt.className="text";
+del.onclick = function(){
 
-txt.innerHTML=data.text;
-
-const del=document.createElement("button");
-
-del.innerHTML="Delete";
-
-del.className="delete";
-
-del.onclick=function(){
-
-db.ref("history/"+key).remove();
+db.ref("history/" + key).remove();
 
 };
 
-li.appendChild(txt);
-
+li.appendChild(text);
 li.appendChild(del);
 
 list.prepend(li);
@@ -314,8 +240,8 @@ list.prepend(li);
 
 });
 
-
 </script>
 
 </body>
+
 </html>
