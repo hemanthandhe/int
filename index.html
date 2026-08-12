@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 
 <meta charset="UTF-8">
@@ -9,7 +10,6 @@
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 <script src="firebase.js"></script>
 
 <style>
@@ -63,7 +63,7 @@ font-size:18px;
 border:none;
 border-radius:8px;
 cursor:pointer;
-color:white;
+color:#fff;
 }
 
 .start{
@@ -108,14 +108,18 @@ align-items:center;
 gap:10px;
 }
 
-.delete{
-background:red;
-padding:8px 12px;
-}
-
 .text{
 flex:1;
 word-break:break-word;
+}
+
+.delete{
+background:red;
+padding:8px 12px;
+border:none;
+border-radius:6px;
+color:white;
+cursor:pointer;
 }
 
 </style>
@@ -133,26 +137,23 @@ id="result"
 placeholder="Speak or type here..."
 ></textarea>
 
-    <h3>Upload Image</h3>
-
-<input
-type="file"
-id="imageFile"
-accept="image/*">
-
-<button onclick="uploadImage()">
-📷 Upload Image
-</button>
-
 <div class="buttons">
 
-<button class="start" onclick="start()">🎤 Start</button>
+<button class="start" onclick="start()">
+🎤 Start
+</button>
 
-<button class="stop" onclick="stop()">⏹ Stop</button>
+<button class="stop" onclick="stop()">
+⏹ Stop
+</button>
 
-<button class="todo" onclick="saveTodo()">✅ Todo</button>
+<button class="todo" onclick="saveTodo()">
+✅ Todo
+</button>
 
-<button class="clear" onclick="clearCurrent()">🗑 Clear</button>
+<button class="clear" onclick="clearCurrent()">
+🗑 Clear
+</button>
 
 </div>
 
@@ -167,308 +168,219 @@ Stopped
 </div>
 
 <script>
-// ----------------------------
-// Firebase References
-// ----------------------------
-const textarea = document.getElementById("result");
-const status = document.getElementById("status");
-const todoList = document.getElementById("todoList");
 
-// ----------------------------
-// Check Speech Recognition
-// ----------------------------
-const SpeechRecognition =
-    window.SpeechRecognition ||
-    window.webkitSpeechRecognition;
+const textarea=document.getElementById("result");
+const status=document.getElementById("status");
+const todoList=document.getElementById("todoList");
 
-if (!SpeechRecognition) {
-    alert("Your browser does not support Speech Recognition.\n\nUse Google Chrome on Android/Desktop.");
-}
+const SpeechRecognition=
+window.SpeechRecognition||
+window.webkitSpeechRecognition;
 
-// ----------------------------
-// Create Recognition
-// ----------------------------
-const recognition = SpeechRecognition ? new SpeechRecognition() : null;
+if(!SpeechRecognition){
 
-if (recognition) {
-
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = "en-US";
+alert("Speech Recognition is not supported.\nUse Google Chrome.");
 
 }
 
-let finalText = "";
+const recognition=SpeechRecognition?new SpeechRecognition():null;
 
-// ----------------------------
-// Live typing -> Firebase
-// ----------------------------
-textarea.addEventListener("input", function () {
+let finalText="";
 
-    db.ref("speech").set({
+if(recognition){
 
-        text: textarea.value,
-        clear: false,
-        time: Date.now()
-
-    });
-
-});
-
-// ----------------------------
-// START
-// ----------------------------
-async function start() {
-
-    if (!recognition) return;
-
-    try {
-
-        await navigator.mediaDevices.getUserMedia({
-            audio: true
-        });
-
-        recognition.start();
-
-    } catch (err) {
-
-        alert("Please allow microphone permission.");
-
-        console.log(err);
-
-    }
+recognition.continuous=true;
+recognition.interimResults=true;
+recognition.lang="en-US";
 
 }
 
-// ----------------------------
-// STOP
-// ----------------------------
-function stop() {
+textarea.addEventListener("input",function(){
 
-    if (recognition) {
+db.ref("speech").set({
 
-        recognition.stop();
-
-    }
-
-}
-
-// ----------------------------
-// Recognition Started
-// ----------------------------
-if (recognition) {
-
-recognition.onstart = function () {
-
-    status.innerHTML = "🎤 Listening...";
-    status.style.color = "green";
-
-};
-
-}
-
-// ----------------------------
-// Recognition Ended
-// ----------------------------
-if (recognition) {
-
-recognition.onend = function () {
-
-    status.innerHTML = "Stopped";
-    status.style.color = "red";
-
-};
-
-}
-
-// ----------------------------
-// Recognition Error
-// ----------------------------
-if (recognition) {
-
-recognition.onerror = function (e) {
-
-    console.log(e);
-
-    alert("Speech Error : " + e.error);
-
-};
-
-}
-
-// ----------------------------
-// Speech Result
-// ----------------------------
-if (recognition) {
-
-recognition.onresult = function (event) {
-
-    let interim = "";
-
-    for (let i = event.resultIndex; i < event.results.length; i++) {
-
-        let transcript = event.results[i][0].transcript;
-
-        if (event.results[i].isFinal) {
-
-            finalText += transcript + " ";
-
-        } else {
-
-            interim += transcript;
-
-        }
-
-    }
-
-    let liveText = finalText + interim;
-
-    textarea.value = liveText;
-
-    db.ref("speech").set({
-
-        text: liveText,
-        clear: false,
-        time: Date.now()
-
-    });
-
-};
-
-}
-
-// ----------------------------
-// Clear Current
-// ----------------------------
-function clearCurrent() {
-
-    finalText = "";
-
-    textarea.value = "";
-
-    db.ref("speech").set({
-
-        text: "",
-        clear: true,
-        time: Date.now()
-
-    });
-
-}
-
-// ----------------------------
-// Save Todo
-// ----------------------------
-function saveTodo() {
-
-    let text = textarea.value.trim();
-
-    if (text === "") return;
-
-    const id = Date.now();
-
-    db.ref("history/" + id).set({
-
-        text: text,
-        time: id
-
-    });
-
-    clearCurrent();
-
-}
-
-// ----------------------------
-// Load History
-// ----------------------------
-db.ref("history").on("value", function (snapshot) {
-
-    todoList.innerHTML = "";
-
-    snapshot.forEach(function (child) {
-
-        let data = child.val();
-
-        let key = child.key;
-
-        let li = document.createElement("li");
-
-        let span = document.createElement("div");
-
-        span.className = "text";
-
-        span.innerHTML = data.text;
-
-        let del = document.createElement("button");
-
-        del.innerHTML = "Delete";
-
-        del.className = "delete";
-
-        del.onclick = function () {
-
-            db.ref("history/" + key).remove();
-
-        };
-
-        li.appendChild(span);
-
-        li.appendChild(del);
-
-        todoList.prepend(li);
-
-    });
-
-});
-
-// ----------------------------
-// Live Clear
-// ----------------------------
-db.ref("speech").on("value", function (snapshot) {
-
-    const data = snapshot.val();
-
-    if (!data) return;
-
-    if (data.clear) {
-
-        finalText = "";
-
-        textarea.value = "";
-
-    }
-
-});
-
-    async function uploadImage(){
-
-const file=document.getElementById("imageFile").files[0];
-
-if(!file){
-
-alert("Select an image");
-
-return;
-
-}
-
-const ref=storage.ref("images/"+Date.now()+"_"+file.name);
-
-await ref.put(file);
-
-const url=await ref.getDownloadURL();
-
-db.ref("image").set({
-
-url:url,
+text:textarea.value,
+clear:false,
 time:Date.now()
 
 });
 
-alert("Image Uploaded");
+});
+
+async function start(){
+
+if(!recognition) return;
+
+try{
+
+await navigator.mediaDevices.getUserMedia({
+
+audio:true
+
+});
+
+recognition.start();
+
+}catch(e){
+
+alert("Please allow microphone permission.");
 
 }
+
+}
+
+function stop(){
+
+if(recognition){
+
+recognition.stop();
+
+}
+
+}
+
+if(recognition){
+
+recognition.onstart=function(){
+
+status.innerHTML="🎤 Listening...";
+status.style.color="green";
+
+};
+
+recognition.onend=function(){
+
+status.innerHTML="Stopped";
+status.style.color="red";
+
+};
+
+recognition.onerror=function(e){
+
+alert("Speech Error : "+e.error);
+
+};
+
+recognition.onresult=function(event){
+
+let interim="";
+
+for(let i=event.resultIndex;i<event.results.length;i++){
+
+const text=event.results[i][0].transcript;
+
+if(event.results[i].isFinal){
+
+finalText+=text+" ";
+
+}else{
+
+interim+=text;
+
+}
+
+}
+
+const liveText=finalText+interim;
+
+textarea.value=liveText;
+
+db.ref("speech").set({
+
+text:liveText,
+clear:false,
+time:Date.now()
+
+});
+
+};
+
+}
+
+function clearCurrent(){
+
+finalText="";
+
+textarea.value="";
+
+db.ref("speech").set({
+
+text:"",
+clear:true,
+time:Date.now()
+
+});
+
+}
+
+function saveTodo(){
+
+const text=textarea.value.trim();
+
+if(text==="") return;
+
+const id=Date.now();
+
+db.ref("history/"+id).set({
+
+text:text,
+time:id
+
+});
+
+clearCurrent();
+
+}
+
+db.ref("history").on("value",function(snapshot){
+
+todoList.innerHTML="";
+
+snapshot.forEach(function(child){
+
+const data=child.val();
+const key=child.key;
+
+const li=document.createElement("li");
+
+const txt=document.createElement("div");
+txt.className="text";
+txt.innerHTML=data.text;
+
+const del=document.createElement("button");
+del.className="delete";
+del.innerHTML="Delete";
+
+del.onclick=function(){
+
+db.ref("history/"+key).remove();
+
+};
+
+li.appendChild(txt);
+li.appendChild(del);
+
+todoList.prepend(li);
+
+});
+
+});
+
+db.ref("speech").on("value",function(snapshot){
+
+const data=snapshot.val();
+
+if(data && data.clear){
+
+finalText="";
+textarea.value="";
+
+}
+
+});
+
 </script>
 
 </body>
+
 </html>
