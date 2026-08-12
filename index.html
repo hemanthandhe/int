@@ -439,6 +439,35 @@ db.ref("speech").on("value", function (snapshot) {
     }
 
 });
+
+    async function uploadImage(){
+
+const file=document.getElementById("imageFile").files[0];
+
+if(!file){
+
+alert("Select an image");
+
+return;
+
+}
+
+const ref=storage.ref("images/"+Date.now()+"_"+file.name);
+
+await ref.put(file);
+
+const url=await ref.getDownloadURL();
+
+db.ref("image").set({
+
+url:url,
+time:Date.now()
+
+});
+
+alert("Image Uploaded");
+
+}
 </script>
 
 </body>
